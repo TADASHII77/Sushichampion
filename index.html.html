@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sushi Chase</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{height:100%;margin:0;background:#0d0f24;color:#f3f0ff;font-family:ui-rounded,"Segoe UI",system-ui,sans-serif;overscroll-behavior:none;touch-action:none}
+#app{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:8px 8px 14px}
+#hud{width:100%;max-width:480px;display:flex;justify-content:space-between;font-size:15px;font-weight:600;padding:4px 6px}
+#wrap{position:relative}
+canvas{display:block;border-radius:10px;background:#12153a}
+#pad{display:grid;grid-template-columns:repeat(3,60px);grid-template-rows:repeat(2,60px);gap:6px}
+#pad button{width:60px;height:60px;border-radius:14px;border:1px solid #4a4f9a;background:#222763;color:#fff;font-size:26px;touch-action:none}
+#pad button:active{background:#ff7aa8;border-color:#ffb3cc}
+.u{grid-column:2;grid-row:1}.l{grid-column:1;grid-row:2}.d{grid-column:2;grid-row:2}.r{grid-column:3;grid-row:2}
+.ov{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:16px;background:rgba(13,15,36,.93);border-radius:10px;overflow:auto}
+.ov.show{display:flex}
+.ov h1{font-size:26px;margin:0}
+.ov p{margin:0;font-size:16px;line-height:1.4;max-width:280px}
+.ov button{font:inherit;font-weight:700;font-size:18px;padding:12px 28px;border-radius:14px;border:0;background:#ff7aa8;color:#2a0b1a;touch-action:manipulation}
+#face{width:84px;height:84px;border-radius:50%;border:3px solid #fff;object-fit:cover}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="hud"><span id="sc">Score 0</span><span id="left">Sushi 0</span><span id="lv">Lives 3</span></div>
+  <div id="wrap">
+    <canvas id="c"></canvas>
+    <div class="ov show" id="start">
+      <img id="face" alt="Player" src="data:image/jpeg;base64,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">
+      <h1>Sushi Chase</h1>
+      <p>Eat all the 🍣 before Blinky and Pinky catch you. Use the D-pad, swipe, or arrow keys.</p>
+      <button id="go">Start</button>
+    </div>
+    <div class="ov" id="lose">
+      <h1>Caught!</h1>
+      <p>The ghosts got you. The sushi is still waiting.</p>
+      <button id="retry">Try again</button>
+    </div>
+    <div class="ov" id="win">
+      <svg viewBox="0 0 200 190" width="190" height="180" role="img" aria-label="Cartoon pig stuffed with sushi">
+        <ellipse cx="100" cy="176" rx="70" ry="9" fill="#000" opacity=".3"/>
+        <ellipse cx="52" cy="48" rx="15" ry="20" fill="#ff9ec0" transform="rotate(-25 52 48)"/>
+        <ellipse cx="148" cy="48" rx="15" ry="20" fill="#ff9ec0" transform="rotate(25 148 48)"/>
+        <ellipse cx="100" cy="125" rx="72" ry="52" fill="#ffb3cc"/>
+        <circle cx="100" cy="68" r="44" fill="#ffb3cc"/>
+        <ellipse cx="100" cy="82" rx="19" ry="14" fill="#ff7aa8"/>
+        <circle cx="93" cy="82" r="3.5" fill="#8a2a52"/><circle cx="107" cy="82" r="3.5" fill="#8a2a52"/>
+        <g stroke="#5a1a38" stroke-width="3.5" stroke-linecap="round"><path d="M72 54l14 10M86 54l-14 10"/><path d="M114 54l14 10M128 54l-14 10"/></g>
+        <path d="M92 98q8 10 16 0z" fill="#e0457f"/>
+        <ellipse cx="100" cy="132" rx="46" ry="30" fill="#ffd0e0"/>
+        <text x="100" y="142" text-anchor="middle" font-size="38">🍣</text>
+        <text x="48" y="152" font-size="22">🍣</text><text x="130" y="154" font-size="22">🍣</text>
+        <ellipse cx="62" cy="160" rx="12" ry="9" fill="#ff9ec0"/><ellipse cx="138" cy="160" rx="12" ry="9" fill="#ff9ec0"/>
+      </svg>
+      <h1>Level 1 clear!</h1>
+      <p>You ate ALL the sushi... say hello to your new self! 🍣🐷</p>
+      <button id="again">Play again</button>
+    </div>
+  </div>
+  <div id="pad">
+    <button class="u" data-d="u" aria-label="Up">▲</button>
+    <button class="l" data-d="l" aria-label="Left">◀</button>
+    <button class="d" data-d="d" aria-label="Down">▼</button>
+    <button class="r" data-d="r" aria-label="Right">▶</button>
+  </div>
+</div>
+<script>
+const MAP=[
+"###############",
+"#......#......#",
+"#.####.#.####.#",
+"#.............#",
+"#.##.#####.##.#",
+"#.##.......##.#",
+"#.##.##.##.##.#",
+"#......#......#",
+"###.##.#.##.###",
+"#......#......#",
+"#.####.#.####.#",
+"#.............#",
+"#.##.#####.##.#",
+"#.##.......##.#",
+"#.##.#####.##.#",
+"#.............#",
+"###############"];
+const COLS=15,ROWS=17;
+const DIRS={u:[0,-1],d:[0,1],l:[-1,0],r:[1,0],n:[0,0]};
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const face=document.getElementById('face');
+let T=22,grid,sushi,total,score,lives,player,ghosts,state='menu',queued='n',time=0,hold=0;
+
+function fit(){
+  const hudH=document.getElementById('hud').offsetHeight+130;
+  const w=Math.min(window.innerWidth-16,480),h=window.innerHeight-hudH-30;
+  T=Math.max(14,Math.floor(Math.min(w/COLS,h/ROWS)));
+  const dpr=window.devicePixelRatio||1;
+  cv.width=COLS*T*dpr;cv.height=ROWS*T*dpr;
+  cv.style.width=COLS*T+'px';cv.style.height=ROWS*T+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+function open(x,y){return MAP[y]&&MAP[y][x]&&MAP[y][x]!=='#'}
+function mk(x,y,speed,delay,color,kind){return{tx:x,ty:y,dx:0,dy:0,p:0,speed,delay,color,kind,sx:x,sy:y}}
+function resetActors(){
+  player=mk(7,15,5.2,0,'',''); 
+  ghosts=[mk(1,1,4.3,1.2,'#ff3b30','blinky'),mk(13,1,4.1,3.5,'#ff8fc4','pinky')];
+  queued='n';hold=0.9;
+}
+function newGame(){
+  sushi=new Set();
+  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if(MAP[y][x]==='.'&&!(x===7&&y===15))sushi.add(x+','+y);
+  total=sushi.size;score=0;lives=3;resetActors();hud();state='play';
+  ['start','lose','win'].forEach(i=>document.getElementById(i).classList.remove('show'));
+}
+function hud(){
+  document.getElementById('sc').textContent='Score '+score;
+  document.getElementById('left').textContent='Sushi '+sushi.size;
+  document.getElementById('lv').textContent='Lives '+lives;
+}
+function eat(){
+  const k=player.tx+','+player.ty;
+  if(sushi.delete(k)){score+=10;hud();
+    if(!sushi.size){state='win';setTimeout(()=>document.getElementById('win').classList.add('show'),350)}}
+}
+function advance(e,dt,choose){
+  let dist=e.speed*dt;
+  while(dist>0){
+    if(e.dx===0&&e.dy===0){choose(e);if(e.dx===0&&e.dy===0)return}
+    const need=1-e.p;
+    if(dist<need){e.p+=dist;return}
+    dist-=need;e.tx+=e.dx;e.ty+=e.dy;e.p=0;
+    if(e===player)eat();
+    choose(e);
+  }
+}
+function choosePlayer(e){
+  const q=DIRS[queued];
+  if(queued!=='n'&&open(e.tx+q[0],e.ty+q[1])){e.dx=q[0];e.dy=q[1];return}
+  if(!open(e.tx+e.dx,e.ty+e.dy)){e.dx=0;e.dy=0}
+}
+function chooseGhost(e){
+  const opts=[];
+  for(const k of['u','l','d','r']){
+    const [a,b]=DIRS[k];
+    if(!open(e.tx+a,e.ty+b))continue;
+    if(a===-e.dx&&b===-e.dy&&(e.dx||e.dy))continue;
+    opts.push([a,b]);
+  }
+  if(!opts.length){e.dx=-e.dx;e.dy=-e.dy;return}
+  let gx=player.tx,gy=player.ty;
+  if(e.kind==='pinky'){gx+=player.dx*4;gy+=player.dy*4}
+  if(Math.random()<0.12){const r=opts[Math.floor(Math.random()*opts.length)];e.dx=r[0];e.dy=r[1];return}
+  let best=null,bd=1e9;
+  for(const o of opts){const d=(e.tx+o[0]-gx)**2+(e.ty+o[1]-gy)**2;if(d<bd){bd=d;best=o}}
+  e.dx=best[0];e.dy=best[1];
+}
+function pos(e){return[e.tx+e.dx*e.p,e.ty+e.dy*e.p]}
+function setDir(k){
+  queued=k;
+  if(state!=='play'||!player)return;
+  const q=DIRS[k];
+  if(player.p>0&&q[0]===-player.dx&&q[1]===-player.dy&&(q[0]||q[1])){
+    player.tx+=player.dx;player.ty+=player.dy;player.p=1-player.p;player.dx=q[0];player.dy=q[1];
+  }
+}
+function update(dt){
+  time+=dt;
+  if(state!=='play')return;
+  if(hold>0){hold-=dt;return}
+  advance(player,dt,choosePlayer);
+  for(const g of ghosts){
+    if(g.delay>0){g.delay-=dt;continue}
+    advance(g,dt,chooseGhost);
+    const [px,py]=pos(player),[gx,gy]=pos(g);
+    if(Math.hypot(px-gx,py-gy)<0.65){hit();return}
+  }
+}
+function hit(){
+  lives--;hud();
+  if(lives<=0){state='lose';document.getElementById('lose').classList.add('show')}
+  else resetActors();
+}
+function drawGhost(g){
+  const [x,y]=pos(g),cx=(x+.5)*T,cy=(y+.5)*T,r=T*.46;
+  ctx.fillStyle=g.color;
+  ctx.beginPath();ctx.arc(cx,cy-r*.1,r,Math.PI,0);
+  ctx.lineTo(cx+r,cy+r);
+  for(let i=0;i<4;i++){const sx=cx+r-(i+.5)*(r*2/4);ctx.lineTo(sx,cy+r*(i%2?1:.7));ctx.lineTo(cx+r-(i+1)*(r*2/4),cy+r)}
+  ctx.closePath();ctx.fill();
+  ctx.fillStyle='#fff';
+  for(const s of[-1,1]){ctx.beginPath();ctx.arc(cx+s*r*.38,cy-r*.15,r*.28,0,7);ctx.fill()}
+  ctx.fillStyle='#1b2a9a';
+  const lx=Math.sign(g.dx)*r*.1,ly=Math.sign(g.dy)*r*.1;
+  for(const s of[-1,1]){ctx.beginPath();ctx.arc(cx+s*r*.38+lx,cy-r*.15+ly,r*.14,0,7);ctx.fill()}
+}
+function draw(){
+  ctx.clearRect(0,0,COLS*T,ROWS*T);
+  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+    if(MAP[y][x]==='#'){
+      ctx.fillStyle='#2f35a8';
+      ctx.beginPath();ctx.roundRect(x*T+1,y*T+1,T-2,T-2,T*.28);ctx.fill();
+    }
+  }
+  ctx.font=Math.floor(T*.62)+'px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  for(const k of sushi){const [x,y]=k.split(',').map(Number);ctx.fillText('🍣',(x+.5)*T,(y+.55)*T)}
+  if(!player)return;
+  for(const g of ghosts)drawGhost(g);
+  const [px,py]=pos(player),cx=(px+.5)*T,cy=(py+.5)*T,r=T*.62;
+  const flash=hold>0&&Math.floor(time*8)%2===0;
+  if(!flash){
+    ctx.save();ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.clip();
+    if(face.complete)ctx.drawImage(face,cx-r,cy-r,r*2,r*2);
+    ctx.restore();
+    ctx.lineWidth=2;ctx.strokeStyle='#ffd84a';ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.stroke();
+  }
+}
+let last=0;
+function loop(t){
+  const dt=Math.min(.05,(t-last)/1000||0);last=t;
+  update(dt);draw();requestAnimationFrame(loop);
+}
+document.querySelectorAll('#pad button').forEach(b=>{
+  b.addEventListener('pointerdown',e=>{e.preventDefault();setDir(b.dataset.d)});
+});
+const km={ArrowUp:'u',ArrowDown:'d',ArrowLeft:'l',ArrowRight:'r',w:'u',s:'d',a:'l',d:'r'};
+addEventListener('keydown',e=>{const k=km[e.key];if(k){e.preventDefault();setDir(k)}});
+let sx=0,sy=0;
+addEventListener('touchstart',e=>{const t=e.touches[0];sx=t.clientX;sy=t.clientY},{passive:true});
+addEventListener('touchend',e=>{
+  const t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;
+  if(Math.max(Math.abs(dx),Math.abs(dy))<24)return;
+  setDir(Math.abs(dx)>Math.abs(dy)?(dx>0?'r':'l'):(dy>0?'d':'u'));
+},{passive:true});
+addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+['go','retry','again'].forEach(id=>document.getElementById(id).addEventListener('click',newGame));
+addEventListener('resize',fit);
+sushi=new Set();
+for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if(MAP[y][x]==='.')sushi.add(x+','+y);
+fit();requestAnimationFrame(loop);
+</script>
+</body>
+</html>
